@@ -1,7 +1,8 @@
-suits = {1:'Clubs',2:'Spades',3:'Hearts',4:'Diamonds'}
+suits = {1:'C',2:'S',3:'H',4:'D'} #clubs, spades, hearts, diamonds
+special_numbers = {1:'A',11:'J',12:'Q',13:'K'} #ace, jack, queen, king
 
 class Card:
-    def __init__(self, number, suitNum, faceUp = True):
+    def __init__(self, number, suitNum, faceUp = False):
         self.number = number
         self.suitNum = suitNum
         self.faceUp = faceUp
@@ -9,6 +10,16 @@ class Card:
     def flip(self):
         self.faceUp = not self.faceUp
         return self.faceUp
+    
+    def tidy_summary(self):
+        if self.number in special_numbers:
+            value = special_numbers[self.number]
+        else:
+            value = str(self.number)
+        
+        suit = suits[self.suitNum]
+        
+        return [value,suit]
     
     def red(self):
         return (self.suitNum == 3 or self.suitNum == 4)
