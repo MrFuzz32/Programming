@@ -12,6 +12,8 @@ import random
 #
 # Draw Pile (12 left): [Q:H]
 
+sp = ' '
+
 #return a list containing all 52 playing cards, ordered by suit and value
 def populated_deck():
     deck = []
@@ -28,6 +30,29 @@ def shuffle(deck):
         card = deck.pop(index)
         new_deck.append(card)
     return new_deck
+
+#print out the UI
+def print_screen(board):
+    #find the longest stack on the board
+    max_stack_len = 0
+    for stack in board:
+        if len(stack) > max_stack_len:
+            max_stack_len = len(stack)
+    
+    for row_index in range(max_stack_len):
+        for count,stack in enumerate(board):
+            if count == 6:
+                suffix = ''
+            else:
+                suffix = ' '
+
+            if len(stack) > row_index:
+                info = stack[row_index].visible_info()
+                print('[' + info[0] + info[1] + ']' + suffix, end='')
+            else:
+                print(sp*4 + suffix, end='')
+        print()
+    
         
 
 board = [] #where the current cards 'in play' and their arrangement is stored
@@ -42,8 +67,4 @@ for stack_len in range(1,8):
         stack.append(card_to_add)
     board.append(stack)
 
-#debug readout
-for column in board:
-    for card in column:
-        print(card.visible_info())
-    print('')
+print_screen(board)
