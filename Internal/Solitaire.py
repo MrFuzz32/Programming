@@ -1,5 +1,6 @@
 from Classes import Card
 import random
+from colorama import Fore, Back, Style
 
 #7 columns
 #52 cards
@@ -39,19 +40,34 @@ def print_screen(board):
         if len(stack) > max_stack_len:
             max_stack_len = len(stack)
     
+    # print out each row of the baord
     for row_index in range(max_stack_len):
         for count,stack in enumerate(board):
+            #if the stack is the last on the board, don't put a space after the card
             if count == 6:
                 suffix = ''
             else:
                 suffix = ' '
 
-            if len(stack) > row_index:
-                info = stack[row_index].visible_info()
-                print('[' + info[0] + info[1] + ']' + suffix, end='')
-            else:
-                print(sp*4 + suffix, end='')
-        print()
+            if len(stack) > row_index: # if the stack has an item at the specified row
+                card = stack[row_index]
+                info,faceUp = card.visible_info()
+                middle = info[0]
+                middle += sp*(2-len(middle))
+                middle +=  info[1]
+                output = '[' + middle + ']'
+                if faceUp:
+                    if card.red():
+                        formatting = Back.WHITE + Fore.RED
+                    else:
+                        formatting = Back.WHITE + Fore.BLACK
+                else:
+                    formatting = Back.BLUE
+                print(formatting + output, end='')
+                print(Style.RESET_ALL+suffix, end='')
+            else: # if the stack doesn't have an item at the specified index
+                print(sp*5 + suffix, end='')
+        print() # print a newline for each row
     
         
 
