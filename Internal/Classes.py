@@ -21,6 +21,12 @@ class Card:
         
         return [value,suit]
     
+    def visible_info(self):
+        if self.faceUp == True:
+            return self.tidy_summary()
+        else:
+            return ['-','-']
+    
     def red(self):
         return (self.suitNum == 3 or self.suitNum == 4)
     
