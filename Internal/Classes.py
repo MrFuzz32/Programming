@@ -1,4 +1,4 @@
-suits = {1:'C',2:'S',3:'H',4:'D'} #clubs, spades, hearts, diamonds
+suits = {1:'♣',2:'♠',3:'♥',4:'♦'} #clubs, spades, hearts, diamonds
 special_numbers = {1:'A',11:'J',12:'Q',13:'K'} #ace, jack, queen, king
 
 class Card:
