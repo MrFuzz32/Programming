@@ -1,6 +1,7 @@
 from Classes import Card
 import random
 import time
+import os
 from colorama import Fore, Back, Style
 
 #7 columns
@@ -15,6 +16,11 @@ from colorama import Fore, Back, Style
 # Draw Pile (12 left): [Q:H]
 
 sp = ' '
+
+# taken from https://stackoverflow.com/questions/517970/how-to-clear-the-interpreter-console
+# clears the console
+def cls():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 #return a list containing all 52 playing cards, ordered by suit and value
 def populated_deck():
@@ -85,7 +91,22 @@ def interface(board):
 
 #check to see if the input string fits to the input format asked of the user
 def check(userIn):
-    pass
+    valid = False
+    # find at what index the actual characters start
+    start = 0
+    end = len(userIn) - 1
+    for n in range(start, end + 1):
+        if userIn[n].isalnum():
+            start = n
+            break
+    # find at what index the actual characters end
+    for n in range(end, start - 1, -1):
+        if userIn[n].isalnum():
+            end = n
+            break
+    # clip input to specified start and end values
+    tweaked = userIn[start:end + 1]
+    return valid,tweaked
 
 #output the specified error message
 def error(message):
@@ -113,10 +134,10 @@ while not end:
         time.sleep(1)
     else:
         valid,board = execute(tweaked, board)
-        
+
 if won == True:
     #they won
     pass
 else:
-    #they gave up  
-    pass      
+    #they gave up
+    pass
