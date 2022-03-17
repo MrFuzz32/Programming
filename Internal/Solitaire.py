@@ -1,5 +1,6 @@
 from Classes import Card
 import random
+import time
 from colorama import Fore, Back, Style
 
 #7 columns
@@ -32,8 +33,21 @@ def shuffle(deck):
         new_deck.append(card)
     return new_deck
 
-#print out the UI
-def print_screen(board):
+def init_board(deck):
+    board = []
+    #deal out seven stacks of cards in increasing sizes (as is required for the beginning of solitaire)
+    for stack_len in range(1,8):
+        stack = []
+        for i in range(stack_len):
+            card_to_add = deck.pop(0)
+            if i == stack_len-1: #cards are by default face down, so flip the final card in each stack
+                card_to_add.flip()
+            stack.append(card_to_add)
+        board.append(stack)
+    return board
+
+#print out the UI and returns the user input
+def interface(board):
     #find the longest stack on the board
     max_stack_len = 0
     for stack in board:
@@ -42,7 +56,7 @@ def print_screen(board):
     
     # print out each row of the baord
     for row_index in range(max_stack_len):
-        for count,stack in enumerate(board):
+        for count,stack in enumerate(board): # loop through each stack, taking the row_index-th card in it (if that index exists)
             #if the stack is the last on the board, don't put a space after the card
             if count == 6:
                 suffix = ''
@@ -68,19 +82,41 @@ def print_screen(board):
             else: # if the stack doesn't have an item at the specified index
                 print(sp*5 + suffix, end='')
         print() # print a newline for each row
-    
-        
+
+#check to see if the input string fits to the input format asked of the user
+def check(userIn):
+    pass
+
+#output the specified error message
+def error(message):
+    pass
+
+#execute the given command on the board if it is valid
+def execute(command, board):
+    valid = False
+    return valid,board
 
 board = [] #where the current cards 'in play' and their arrangement is stored
 deck = shuffle(populated_deck()) #generate a random deck of 52 cards and store it in an array
-#deal out seven stacks of cards in increasing sizes (as is required for the beginning of solitaire)
-for stack_len in range(1,8):
-    stack = []
-    for i in range(stack_len):
-        card_to_add = deck.pop(0)
-        if i == stack_len-1: #cards are by default face down, so flip the final card in each stack
-            card_to_add.flip()
-        stack.append(card_to_add)
-    board.append(stack)
+collection = [] #where the collected cards of each suit are stored (clubs, spades, hearts, diamonds)
+drawPile = [] #where the three draw cards are stored
+board = init_board(deck)
 
-print_screen(board)
+#main loop
+end = False #set to true once the user chooses to exit or wins the game
+won = False #set to true if the user has won
+while not end:
+    userIn = interface(board)
+    valid,tweaked = check(userIn)
+    if not valid:
+        error(userIn + ' is not a valid input')
+        time.sleep(1)
+    else:
+        valid,board = execute(tweaked, board)
+        
+if won == True:
+    #they won
+    pass
+else:
+    #they gave up  
+    pass      
