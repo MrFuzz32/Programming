@@ -45,6 +45,9 @@ if card_width < 5:
 #how many spaces on either side of the collection area
 side_collection_buffer = 2
 
+#how many spaces to put between stacks
+stack_spacing = 1
+
 # taken from https://stackoverflow.com/questions/517970/how-to-clear-the-interpreter-console
 # clears the console
 def cls():
@@ -110,6 +113,9 @@ def card_string(card, colour = True):
 def cs(text,style):
     return style+text+reset_format
 
+def blank_row():
+    return cs(sp*(7*card_width+7*stack_spacing),board_style) + cs(sp*(side_collection_buffer*2+card_width),side_style)
+
 #print out the UI and returns the user input
 def interface(board):
     cls()
@@ -120,25 +126,19 @@ def interface(board):
             max_stack_len = len(stack)
     
     #make sure the board is at least 5 spaces tall to allow for card collection on the right
-    if max_stack_len < 5:
-        max_stack_len = 5
+    if max_stack_len < 4:
+        max_stack_len = 4
     
-    # print out each row of the baord
+    print(blank_row())
+    # print out each row of the baord's stacks, as well as the collection piles
     for row_index in range(max_stack_len):
         for count,stack in enumerate(board): # loop through each stack, taking the row_index-th card in it (if that index exists)
-            #if the stack is the last on the board, don't put a space after the card
-            if count == 6:
-                suffix = ''
-            else:
-                suffix = ' '
-
             if len(stack) > row_index: # if the stack has an item at the specified row
                 card = stack[row_index]
                 output = card_string(card)
-                print(output, end='')
-                print(cs(suffix, board_style), end='')
+                print(cs(sp*stack_spacing + output,board_style), end='')
             else: # if the stack doesn't have an item at the specified index
-                print(cs(sp*card_width + suffix, board_style), end='')
+                print(cs(sp*(card_width+stack_spacing), board_style), end='')
         buffer_seg = cs(sp,side_style)
         buffer = buffer_seg*side_collection_buffer
         if row_index <=3:
@@ -149,6 +149,12 @@ def interface(board):
         else:
             print(buffer*2+buffer_seg*card_width,end='')
         print() # print a newline for each row
+    print(blank_row())
+    #print out the draw pile
+    if len(deck) >= 5:
+        print('['*5+'deck]',end='')
+    else:
+        print('['*len(deck)+'deck]',end='')
     return input()
 
 def controls():
@@ -202,7 +208,7 @@ while not end:
         error(tweaked + ' is not a valid input')
         time.sleep(1)
     else:
-        valid,board = execute(tweaked, board)
+        valid_command,board = execute(tweaked, board)
 
 if won == True:
     #they won
