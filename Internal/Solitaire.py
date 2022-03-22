@@ -1,5 +1,7 @@
 from logging import exception
 from msilib.schema import ReserveCost
+
+from matplotlib.pyplot import step
 from Classes import Card,suits
 import random
 import time
@@ -35,6 +37,7 @@ red_card_style = Back.WHITE + Fore.RED
 black_card_style = Back.WHITE + Fore.BLACK
 facedown_card_style = Back.BLUE + Fore.LIGHTYELLOW_EX
 empty_space_style = Back.LIGHTBLACK_EX + Fore.WHITE
+draw_pile_card_style = Back.LIGHTBLACK_EX + Fore.WHITE
 reset_format = Style.RESET_ALL
 
 #the width (in spaces) of each card on the board, cannot be less than 5
@@ -46,7 +49,24 @@ if card_width < 5:
 side_collection_buffer = 2
 
 #how many spaces to put between stacks
-stack_spacing = 1
+stack_spacing = 2
+
+#how many spaces to put between each card in the draw pile
+draw_pile_spacing = 0
+
+#calculations of section widths
+board_width = 7*card_width+8*stack_spacing
+side_width = 2*side_collection_buffer+card_width
+
+#the ammount of ['s used to indicate the size of the remaining draw pile
+draw_pile_preview = 10
+
+#stands for colour string
+def cs(text,style):
+    return style+text+reset_format
+
+board_back_seg = cs(sp,board_style)
+side_back_seg = cs(sp,side_style)
 
 # taken from https://stackoverflow.com/questions/517970/how-to-clear-the-interpreter-console
 # clears the console
@@ -106,15 +126,17 @@ def card_string(card, colour = True):
                 formatting = black_card_style
         else:
             formatting = facedown_card_style
+        output = cs(output,formatting)
     
-    return cs(output,formatting)
+    return output
 
-#stands for colour string
-def cs(text,style):
-    return style+text+reset_format
-
-def blank_row():
-    return cs(sp*(7*card_width+7*stack_spacing),board_style) + cs(sp*(side_collection_buffer*2+card_width),side_style)
+def blank_row(board=True,side=True):
+    output = ''
+    if board:
+        output += cs(sp*board_width,board_style)
+    if side:
+        output += cs(sp*side_width,side_style)
+    return output
 
 #print out the UI and returns the user input
 def interface(board):
@@ -125,43 +147,67 @@ def interface(board):
         if len(stack) > max_stack_len:
             max_stack_len = len(stack)
     
-    #make sure the board is at least 5 spaces tall to allow for card collection on the right
+    #make sure the board is at least 4 spaces tall to allow for card collection on the right
     if max_stack_len < 4:
-        max_stack_len = 4
+        board_height = 4
+    else:
+        board_height = max_stack_len
     
     print(blank_row())
     # print out each row of the baord's stacks, as well as the collection piles
-    for row_index in range(max_stack_len):
+    for row_index in range(board_height):
         for count,stack in enumerate(board): # loop through each stack, taking the row_index-th card in it (if that index exists)
+            if count == 6:
+                suffix = board_back_seg*stack_spacing
+            else:
+                suffix = ''
             if len(stack) > row_index: # if the stack has an item at the specified row
                 card = stack[row_index]
                 output = card_string(card)
-                print(cs(sp*stack_spacing + output,board_style), end='')
+                print(board_back_seg*stack_spacing + output + suffix, end='')
             else: # if the stack doesn't have an item at the specified index
-                print(cs(sp*(card_width+stack_spacing), board_style), end='')
-        buffer_seg = cs(sp,side_style)
-        buffer = buffer_seg*side_collection_buffer
+                print(board_back_seg*(card_width+stack_spacing) + suffix, end='')
+        buffer = side_back_seg*side_collection_buffer
         if row_index <=3:
             try:
                 print(buffer + card_string(collection[row_index][-1]) + buffer,end='')
             except:
                 print(buffer + cs('[ '+suits[row_index+1]+' ]', empty_space_style) + buffer,end='')
         else:
-            print(buffer*2+buffer_seg*card_width,end='')
+            print(buffer*2+side_back_seg*card_width,end='')
         print() # print a newline for each row
     print(blank_row())
     #print out the draw pile
-    if len(deck) >= 5:
-        print('['*5+'deck]',end='')
+    if len(deck) >= draw_pile_preview:
+        start = '['*draw_pile_preview
     else:
-        print('['*len(deck)+'deck]',end='')
+        start = '['*len(deck)
+    line = board_back_seg*stack_spacing + cs(start+'x'*(card_width-2)+']',facedown_card_style) + board_back_seg
+    for i in range(2,-1,-1):
+        try:
+            if i == 0:
+                cardstring = card_string(drawPile[i])
+            else:
+                cardstring = cs(card_string(drawPile[i],False),draw_pile_card_style)
+            
+            if i == 2:
+                spacing = ''
+            else:
+                board_back_seg*draw_pile_spacing
+            line += spacing + cardstring
+        except:
+            line += board_back_seg*(card_width+draw_pile_spacing)
+    print(line,end='')
+    line_length = stack_spacing + len(start) + card_width-1 + 1 + 3*card_width + 2*draw_pile_spacing
+    print(board_back_seg*(board_width-line_length),end='')
+    print(blank_row(False,True),end='')
     return input()
 
 def controls():
     cls()
     print(header('SOLITAIRE CONTROLS'))
     print('Use the keyboard to input actions\n\nPress ENTER to continue')
-    input()
+    #input()
 
 #check to see if the input string fits to the input format asked of the user
 def check(userIn):
@@ -194,7 +240,7 @@ def execute(command, board):
 board = [] #where the current cards 'in play' and their arrangement is stored
 deck = shuffle(populated_deck()) #generate a random deck of 52 cards and store it in an array
 collection = [] #where the collected cards of each suit are stored (clubs, spades, hearts, diamonds)
-drawPile = [] #where the three draw cards are stored
+drawPile = [Card(10,3,True),Card(13,1,True),Card(3,3,True)] #where the three draw cards are stored
 board = init_board(deck)
 controls()
 
