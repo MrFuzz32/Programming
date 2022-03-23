@@ -8,6 +8,7 @@ import time
 import os
 import math
 from colorama import Fore, Back, Style
+from tabulate import tabulate
 
 #7 columns
 #52 cards
@@ -30,7 +31,7 @@ sp = ' '
 # the total length of each header
 hdrlen = 40
 
-#coloring theme for the game
+#coloring themes for the game
 board_style = Back.GREEN
 side_style = Back.LIGHTGREEN_EX
 red_card_style = Back.WHITE + Fore.RED
@@ -38,7 +39,10 @@ black_card_style = Back.WHITE + Fore.BLACK
 facedown_card_style = Back.BLUE + Fore.LIGHTYELLOW_EX
 empty_space_style = Back.LIGHTBLACK_EX + Fore.WHITE
 draw_pile_card_style = Back.LIGHTBLACK_EX + Fore.WHITE
-held_title_style = Back.BLACK + Fore.WHITE
+held_title_style = Back.LIGHTYELLOW_EX + Fore.BLACK + Style.BRIGHT
+input_line_style = Back.LIGHTYELLOW_EX + Fore.BLACK
+title_style = Back.LIGHTYELLOW_EX + Fore.BLACK + Style.BRIGHT
+extra_card_status_style = Back.LIGHTGREEN_EX + Fore.BLACK
 reset_format = Style.RESET_ALL
 
 #the width (in spaces) of each card on the board, cannot be less than 5
@@ -47,7 +51,7 @@ if card_width < 5:
     card_width = 5
 
 #how many spaces on either side of the collection area
-side_collection_buffer = 2
+side_collection_buffer = 3
 
 #how many spaces to put between stacks
 stack_spacing = 2
@@ -61,6 +65,9 @@ side_width = 2*side_collection_buffer+card_width
 
 #the ammount of ['s used to indicate the size of the remaining draw pile
 draw_pile_preview = 10
+
+#how wide the control screen should be
+control_screen_width = 70
 
 #stands for colour string
 def cs(text,style):
@@ -144,8 +151,11 @@ def blank_row(board=True,side=True):
     return output
 
 #print out the UI and returns the user input
-def interface(board,drawPile,held_card):
+def interface(board,drawPile,held_cards):
     cls()
+    #print the title
+    print(header('SOLITAIRE',board_width+side_width,cs(sp,title_style),title_style))
+    
     #find the longest stack on the board
     max_stack_len = 0
     for stack in board:
@@ -183,6 +193,7 @@ def interface(board,drawPile,held_card):
             print(buffer*2+side_back_seg*card_width,end='')
         print() # print a newline for each row
     
+    #print the held section title
     print(blank_row(True,False),end='')
     buffer = side_back_seg*side_collection_buffer
     line = buffer + header('Held:',card_width,side_back_seg,held_title_style) + buffer
@@ -212,20 +223,29 @@ def interface(board,drawPile,held_card):
     line_length = stack_spacing + len(start) + card_width-1 + 1 + 3*card_width + 2*draw_pile_spacing
     print(board_back_seg*(board_width-line_length),end='')
     
-    #print the held card
+    #print the held cards
     try:
-        print(buffer+card_string(held_card)+buffer)
+        print(buffer+card_string(held_cards[0])+buffer)
     except:
         print(buffer+side_back_seg*card_width+buffer)
-    print(blank_row())
+    
+    if len(held_cards) > 1:
+        print(blank_row(True,False),end='')
+        line = header('(+'+str(len(held_cards)-1)+' more)',card_width+2*side_collection_buffer,side_back_seg,extra_card_status_style)
+        print(line)
+    else:
+        print(blank_row())
+    
+    #print the user input line
+    print(cs('Input your command here:',input_line_style) + sp,end='')
     
     return input()
 
 def controls():
     cls()
-    print(header('SOLITAIRE CONTROLS'))
+    print(header('SOLITAIRE CONTROLS',control_screen_width,cs(sp,title_style),title_style))
     print('Use the keyboard to input actions\n\nPress ENTER to continue')
-    #input()
+    input()
 
 #check to see if the input string fits to the input format asked of the user
 def check(userIn):
@@ -258,8 +278,8 @@ def execute(command, board):
 board = [] #where the current cards 'in play' and their arrangement is stored
 deck = shuffle(populated_deck()) #generate a random deck of 52 cards and store it in an array
 collection = [] #where the collected cards of each suit are stored (clubs, spades, hearts, diamonds)
-drawPile = [Card(10,3,True),Card(13,1,True),Card(3,3,True)] #where the three draw cards are stored
-held_card = Card(1,4,True) #where the current held card is stored
+drawPile = [] #where the draw cards are stored
+held_cards = [] #where the current held cards are stored
 board = init_board(deck)
 controls()
 
@@ -267,7 +287,7 @@ controls()
 end = False #set to true once the user chooses to exit or wins the game
 won = False #set to true if the user has won
 while not end:
-    userIn = interface(board,drawPile,held_card)
+    userIn = interface(board,drawPile,held_cards)
     valid,tweaked = check(userIn)
     if not valid:
         error(tweaked + ' is not a valid input')
