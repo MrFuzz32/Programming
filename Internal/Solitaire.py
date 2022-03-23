@@ -8,7 +8,6 @@ import time
 import os
 import math
 from colorama import Fore, Back, Style
-from tabulate import tabulate
 
 #7 columns
 #52 cards

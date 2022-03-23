@@ -1,0 +1,38 @@
+This game of solitaire is controlled by entering commands with keywords.
+ - Stacks are referred to with numbering from 1 to 7 from the left to the right of the screen.
+ - The draw pile is refered to with a D
+ - The collection piles on the right are referred to with P then a number 1-4 (top pile-bottom pile)
+Below is the list of possible commands and their usage:
+
+Grab:
+    Attempts to grab a number of cards from an area and puts them in your held slot
+
+    Usage - Grab a b
+    a is how many cards to grab (eg. 3)
+    b is where to grab the cards from (eg. 6 for stack 6)
+    Notes:
+      - a can only be 1 when grabbing from the draw pile (D) or a collection pile (P1-P4)
+      - b can be one of the following: 1,2,3,4,5,6,7,P1,P2,P3,P4,D
+
+Place:
+    Attemps to place the cards in your held slot in an area
+
+    Usage - Place a
+    a is where to place the held cards
+    Notes:
+      - a can be one of the following: 1,2,3,4,5,6,7,P1,P2,P3,P4
+
+Drop:
+    Relinquishes your hold on the cards in your held slot, returning them to where they were grabbed from
+
+    Usage - Drop
+
+Draw:
+    Cycles the draw pile once
+
+    Usage - Draw
+
+Exit:
+    Exits the application
+
+    Usage - Exit
