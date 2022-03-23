@@ -38,10 +38,11 @@ black_card_style = Back.WHITE + Fore.BLACK
 facedown_card_style = Back.BLUE + Fore.LIGHTYELLOW_EX
 empty_space_style = Back.LIGHTBLACK_EX + Fore.WHITE
 draw_pile_card_style = Back.LIGHTBLACK_EX + Fore.WHITE
+held_title_style = Back.BLACK + Fore.WHITE
 reset_format = Style.RESET_ALL
 
 #the width (in spaces) of each card on the board, cannot be less than 5
-card_width = 5
+card_width = 7
 if card_width < 5:
     card_width = 5
 
@@ -74,9 +75,13 @@ def cls():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 # takes in a title and total target length of the header, and returns a string with the title surrounded by the correct number of (by default)'-'s
-def header(text, length=hdrlen, char='-'):
-    return math.floor((length - len(text)) / 2) * char + text + math.ceil(
-        (length - len(text)) / 2) * char
+def header(textRaw, length=hdrlen, char='-', style=None):
+    if not style == None:
+        text = cs(textRaw,style)
+    else:
+        text = textRaw
+    return math.floor((length - len(textRaw)) / 2) * char + text + math.ceil(
+        (length - len(textRaw)) / 2) * char
 
 #return a list containing all 52 playing cards, ordered by suit and value
 def populated_deck():
@@ -139,7 +144,7 @@ def blank_row(board=True,side=True):
     return output
 
 #print out the UI and returns the user input
-def interface(board):
+def interface(board,drawPile,held_card):
     cls()
     #find the longest stack on the board
     max_stack_len = 0
@@ -168,15 +173,21 @@ def interface(board):
             else: # if the stack doesn't have an item at the specified index
                 print(board_back_seg*(card_width+stack_spacing) + suffix, end='')
         buffer = side_back_seg*side_collection_buffer
+        #if one of the first 4 rows, add on a collection pile
         if row_index <=3:
             try:
                 print(buffer + card_string(collection[row_index][-1]) + buffer,end='')
             except:
-                print(buffer + cs('[ '+suits[row_index+1]+' ]', empty_space_style) + buffer,end='')
+                print(buffer + cs('[',empty_space_style) + header(suits[row_index+1],card_width-2,cs(sp,empty_space_style),empty_space_style) + cs(']',empty_space_style) + buffer,end='')
         else:
             print(buffer*2+side_back_seg*card_width,end='')
         print() # print a newline for each row
-    print(blank_row())
+    
+    print(blank_row(True,False),end='')
+    buffer = side_back_seg*side_collection_buffer
+    line = buffer + header('Held:',card_width,side_back_seg,held_title_style) + buffer
+    print(line)
+    
     #print out the draw pile
     if len(deck) >= draw_pile_preview:
         start = '['*draw_pile_preview
@@ -200,7 +211,14 @@ def interface(board):
     print(line,end='')
     line_length = stack_spacing + len(start) + card_width-1 + 1 + 3*card_width + 2*draw_pile_spacing
     print(board_back_seg*(board_width-line_length),end='')
-    print(blank_row(False,True),end='')
+    
+    #print the held card
+    try:
+        print(buffer+card_string(held_card)+buffer)
+    except:
+        print(buffer+side_back_seg*card_width+buffer)
+    print(blank_row())
+    
     return input()
 
 def controls():
@@ -241,6 +259,7 @@ board = [] #where the current cards 'in play' and their arrangement is stored
 deck = shuffle(populated_deck()) #generate a random deck of 52 cards and store it in an array
 collection = [] #where the collected cards of each suit are stored (clubs, spades, hearts, diamonds)
 drawPile = [Card(10,3,True),Card(13,1,True),Card(3,3,True)] #where the three draw cards are stored
+held_card = Card(1,4,True) #where the current held card is stored
 board = init_board(deck)
 controls()
 
@@ -248,7 +267,7 @@ controls()
 end = False #set to true once the user chooses to exit or wins the game
 won = False #set to true if the user has won
 while not end:
-    userIn = interface(board)
+    userIn = interface(board,drawPile,held_card)
     valid,tweaked = check(userIn)
     if not valid:
         error(tweaked + ' is not a valid input')
