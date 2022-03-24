@@ -1,7 +1,3 @@
-from logging import exception
-from msilib.schema import ReserveCost
-
-from matplotlib.pyplot import step
 from Classes import Card,suits
 import random
 import time
@@ -24,8 +20,11 @@ from colorama import Fore, Back, Style
 #row of card to move,how many cards from that row:where to move it ----- or draw pile
 #options: [1,2,3,4,5,6,7],num or D
 
-sp = ' '
+#valid command keywords and arguments
+commands = {'grab':[int,'1,2,3,4,5,6,7,P1,P2,P3,P4,D'],'place':['1,2,3,4,5,6,7,P1,P2,P3,P4'],'drop':None,'draw':None,'exit':None}
 
+#makes printing compound strings easier
+sp = ' '
 
 # the total length of each header
 hdrlen = 40
@@ -240,39 +239,44 @@ def interface(board,drawPile,held_cards):
     
     return input()
 
-def controls():
-    cls()
-    print(header('SOLITAIRE CONTROLS',control_screen_width,cs(sp,title_style),title_style))
-    print('Use the keyboard to input actions\n\nPress ENTER to continue')
-    input()
+#output the specified error message
+def print_error(message):
+    print(message)
 
-#check to see if the input string fits to the input format asked of the user
-def check(userIn):
-    valid = False
+#cut off any non-alphanumeric characters at the ends of the text
+def clip(text):
     # find at what index the actual characters start
     start = 0
-    end = len(userIn) - 1
+    end = len(text) - 1
     for n in range(start, end + 1):
-        if userIn[n].isalnum():
+        if text[n].isalnum():
             start = n
             break
     # find at what index the actual characters end
     for n in range(end, start - 1, -1):
-        if userIn[n].isalnum():
+        if text[n].isalnum():
             end = n
             break
     # clip input to specified start and end values
-    tweaked = userIn[start:end + 1]
-    return valid,tweaked
-
-#output the specified error message
-def error(message):
-    print(message)
+    tweaked = text[start:end + 1]
+    return tweaked
 
 #execute the given command on the board if it is valid
-def execute(command, board):
-    valid = False
-    return valid,board
+def execute(command_string,board):
+    command_string = clip(command_string)
+    command_string_lower = command_string.lower()
+    segments = command_string_lower.split(' ')
+    nb_segments = [] #stands for non_blank_segments
+    for count,segment in enumerate(segments):
+        if not len(segment) == 0:
+            nb_segments.append(segments[count])
+    try:
+        command = commands[clip(segments[0])]
+    except:
+        return command_string + ' is not a recognised command',board
+    
+    
+    return None,board
 
 board = [] #where the current cards 'in play' and their arrangement is stored
 deck = shuffle(populated_deck()) #generate a random deck of 52 cards and store it in an array
@@ -280,19 +284,18 @@ collection = [] #where the collected cards of each suit are stored (clubs, spade
 drawPile = [] #where the draw cards are stored
 held_cards = [] #where the current held cards are stored
 board = init_board(deck)
-controls()
 
 #main loop
 end = False #set to true once the user chooses to exit or wins the game
 won = False #set to true if the user has won
+
 while not end:
     userIn = interface(board,drawPile,held_cards)
-    valid,tweaked = check(userIn)
-    if not valid:
-        error(tweaked + ' is not a valid input')
+    error,board = execute(userIn, board)
+    if not error == None:
+        print_error(error)
         time.sleep(1)
-    else:
-        valid_command,board = execute(tweaked, board)
+        
 
 if won == True:
     #they won
