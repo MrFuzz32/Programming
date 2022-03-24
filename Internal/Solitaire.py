@@ -220,13 +220,13 @@ def interface(board,drawPile,held_cards):
     
     #print the held cards
     try:
-        print(buffer+card_string(held_cards[0])+buffer)
+        print(buffer+card_string(held_cards[0][0])+buffer)
     except:
         print(buffer+side_back_seg*card_width+buffer)
     
-    if len(held_cards) > 1:
+    if len(held_cards[0]) > 1:
         print(blank_row(True,False),end='')
-        line = header('(+'+str(len(held_cards)-1)+' more)',card_width+2*side_collection_buffer,side_back_seg,extra_card_status_style)
+        line = header('(+'+str(len(held_cards[0])-1)+' more)',card_width+2*side_collection_buffer,side_back_seg,extra_card_status_style)
         print(line)
     else:
         print(blank_row())
@@ -273,12 +273,31 @@ def execute(command_string,board):
         try:
             quantity = int(nb_segments[1])
         except:
-            return 'The command ' + first_item + ' has been used incorrectly',board
+            return first_item + ' has been used incorrectly',board
         try:
             location = int(nb_segments[2])
             # grab from a stack
-            print('stack')
+            if location > 7 or location < 1: #check if the location is a number 1-7 (stack 1-7)
+                return first_item + ' has been used incorrectly',board
+            if not len(held_cards[0]) == 0:
+                if len(held_cards[0]) == 1:
+                    return 'There is already a card being held',board
+                else:
+                    return 'There are already cards being held',board
+            stack = board[location-1]
+            faceUps = 0
+            for card in stack:
+                if card.faceUp == True:
+                    faceUps += 1
+            if faceUps < quantity: #check if there are enough face up cards in the stack to grab the requested ammount
+                return 'There are not enough face up cards in stack ' + str(location) + ' to grab ' + str(quantity),board
+            for index in range(-quantity,0):
+                held_cards[0].append(board[location-1].pop(index))
+            held_cards.append(nb_segments[2])
+            print(held_cards[1])
         except:
+            if not quantity == 1:
+                return first_item + ' has been used incorrectly',board
             if nb_segments[2] in ['d','p1','p2','p3','p4']:
                 if nb_segments[2] == 'd':
                     # grab from draw pile
@@ -289,12 +308,25 @@ def execute(command_string,board):
                     print('collection')
                     pass
             else:
-                return 'The command ' + first_item + ' has been used incorrectly',board
+                return first_item + ' has been used incorrectly',board
         time.sleep(1)
     elif first_item == 'place':
         pass
     elif first_item == 'drop':
-        pass
+        if len(held_cards[0]) == 0:
+            return 'there are no cards to drop',board
+        if held_cards[1] in ['1','2','3','4','5','6','7']:
+            #stack
+            index = int(held_cards[1])-1
+            for held_index in range(len(held_cards[0])):
+                board[index].append(held_cards[0].pop(held_index))
+            held_cards.pop(1)
+        elif held_cards[1] == 'd':
+            #draw pile
+            pass
+        else:
+            #collection pile
+            pass
     elif first_item == 'draw':
         pass
     elif first_item == 'exit':
@@ -308,7 +340,7 @@ board = [] #where the current cards 'in play' and their arrangement is stored
 deck = shuffle(populated_deck()) #generate a random deck of 52 cards and store it in an array
 collection = [] #where the collected cards of each suit are stored (clubs, spades, hearts, diamonds)
 drawPile = [] #where the draw cards are stored
-held_cards = [] #where the current held cards are stored
+held_cards = [[]] #where the current held cards are stored
 board = init_board(deck)
 
 #main loop
