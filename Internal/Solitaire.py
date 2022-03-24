@@ -20,9 +20,6 @@ from colorama import Fore, Back, Style
 #row of card to move,how many cards from that row:where to move it ----- or draw pile
 #options: [1,2,3,4,5,6,7],num or D
 
-#valid command keywords and arguments
-commands = {'grab':[int,'1,2,3,4,5,6,7,P1,P2,P3,P4,D'],'place':['1,2,3,4,5,6,7,P1,P2,P3,P4'],'drop':None,'draw':None,'exit':None}
-
 #makes printing compound strings easier
 sp = ' '
 
@@ -270,11 +267,40 @@ def execute(command_string,board):
     for count,segment in enumerate(segments):
         if not len(segment) == 0:
             nb_segments.append(segments[count])
-    try:
-        command = commands[clip(segments[0])]
-    except:
-        return command_string + ' is not a recognised command',board
     
+    first_item = nb_segments[0]
+    if first_item == 'grab':
+        try:
+            quantity = int(nb_segments[1])
+        except:
+            return 'The command ' + first_item + ' has been used incorrectly',board
+        try:
+            location = int(nb_segments[2])
+            # grab from a stack
+            print('stack')
+        except:
+            if nb_segments[2] in ['d','p1','p2','p3','p4']:
+                if nb_segments[2] == 'd':
+                    # grab from draw pile
+                    print('draw')
+                    pass
+                else:
+                    # grab from a collection pile
+                    print('collection')
+                    pass
+            else:
+                return 'The command ' + first_item + ' has been used incorrectly',board
+        time.sleep(1)
+    elif first_item == 'place':
+        pass
+    elif first_item == 'drop':
+        pass
+    elif first_item == 'draw':
+        pass
+    elif first_item == 'exit':
+        end = True
+    else:
+        return first_item + ' is not a recognised command',board
     
     return None,board
 
