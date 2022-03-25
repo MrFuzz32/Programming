@@ -64,6 +64,9 @@ draw_pile_preview = 10
 #how wide the control screen should be
 control_screen_width = 70
 
+#the amount of cards to draw each time the draw pile is cycled
+drawCount = 1
+
 #stands for colour string
 def cs(text,style):
     return style+text+reset_format
@@ -193,13 +196,21 @@ def interface(board,drawPile,held_cards):
     buffer = side_back_seg*side_collection_buffer
     line = buffer + header('Held:',card_width,side_back_seg,held_title_style) + buffer
     print(line)
-    
     #print out the draw pile
     if len(deck) >= draw_pile_preview:
         start = '['*draw_pile_preview
+        delta = 0
+    elif len(deck) == 0:
+        start = ''
+        delta = draw_pile_preview
     else:
-        start = '['*len(deck)
-    line = board_back_seg*stack_spacing + cs(start+'x'*(card_width-2)+']',facedown_card_style) + board_back_seg
+        start = '['*(len(deck)-1)
+        delta = draw_pile_preview-len(deck)+1
+    try:
+        middle = card_string(deck[0])
+    except:
+        middle = board_back_seg*card_width
+    line = board_back_seg*(stack_spacing) + cs(start+middle,facedown_card_style) + board_back_seg*(delta+1)
     for i in range(2,-1,-1):
         try:
             if i == 0:
@@ -215,7 +226,7 @@ def interface(board,drawPile,held_cards):
         except:
             line += board_back_seg*(card_width+draw_pile_spacing)
     print(line,end='')
-    line_length = stack_spacing + len(start) + card_width-1 + 1 + 3*card_width + 2*draw_pile_spacing
+    line_length = stack_spacing + len(start) + card_width +1 + 3*card_width + 2*draw_pile_spacing + delta
     print(board_back_seg*(board_width-line_length),end='')
     
     #print the held cards
@@ -258,6 +269,14 @@ def clip(text):
     tweaked = text[start:end + 1]
     return tweaked
 
+#cycles the draw pile through a specified amount of cards
+def cycleDraw(count):
+    for i in range(count):
+        card = deck.pop(0)
+        card.flip()
+        drawPile.insert(0,card)
+        
+
 #execute the given command on the board if it is valid
 def execute(command_string,board):
     command_string = clip(command_string)
@@ -267,59 +286,63 @@ def execute(command_string,board):
     for count,segment in enumerate(segments):
         if not len(segment) == 0:
             nb_segments.append(segments[count])
-    
+    if len(nb_segments) == 0:
+        return None,board,end
     first_item = nb_segments[0]
     if first_item == 'grab':
         try:
             quantity = int(nb_segments[1])
         except:
-            return first_item + ' has been used incorrectly',board
+            return first_item + ' has been used incorrectly',board,False
         try:
             location = int(nb_segments[2])
             # grab from a stack
             if location > 7 or location < 1: #check if the location is a number 1-7 (stack 1-7)
-                return first_item + ' has been used incorrectly',board
+                return first_item + ' has been used incorrectly',board,False
             if not len(held_cards[0]) == 0:
                 if len(held_cards[0]) == 1:
-                    return 'There is already a card being held',board
+                    return 'There is already a card being held',board,False
                 else:
-                    return 'There are already cards being held',board
+                    return 'There are already cards being held',board,False
             stack = board[location-1]
             faceUps = 0
             for card in stack:
                 if card.faceUp == True:
                     faceUps += 1
             if faceUps < quantity: #check if there are enough face up cards in the stack to grab the requested ammount
-                return 'There are not enough face up cards in stack ' + str(location) + ' to grab ' + str(quantity),board
+                return 'There are not enough face up cards in stack ' + str(location) + ' to grab ' + str(quantity),board,False
             for index in range(-quantity,0):
                 held_cards[0].append(board[location-1].pop(index))
             held_cards.append(nb_segments[2])
-            print(held_cards[1])
         except:
             if not quantity == 1:
-                return first_item + ' has been used incorrectly',board
+                return first_item + ' has been used incorrectly',board,False
             if nb_segments[2] in ['d','p1','p2','p3','p4']:
                 if nb_segments[2] == 'd':
                     # grab from draw pile
-                    print('draw')
-                    pass
+                    if len(drawPile) == 0:
+                        return 'The draw pile is empty',board,False
+                    card = drawPile.pop(0)
                 else:
                     # grab from a collection pile
-                    print('collection')
-                    pass
+                    pileIndex = int(nb_segments[2][1])-1
+                    if len(collection[pileIndex]) == 0:
+                        return 'Collection pile ' + str(pileIndex+1) + ' is empty',board,False
+                    card = collection[pileIndex].pop(0)
+                held_cards[0].append(card)
+                held_cards.append(nb_segments[2])
             else:
-                return first_item + ' has been used incorrectly',board
-        time.sleep(1)
+                return first_item + ' has been used incorrectly',board,False
     elif first_item == 'place':
         pass
     elif first_item == 'drop':
         if len(held_cards[0]) == 0:
-            return 'there are no cards to drop',board
+            return 'there are no cards to drop',board,False
         if held_cards[1] in ['1','2','3','4','5','6','7']:
             #stack
             index = int(held_cards[1])-1
             for held_index in range(len(held_cards[0])):
-                board[index].append(held_cards[0].pop(held_index))
+                board[index].append(held_cards[0].pop(0))
             held_cards.pop(1)
         elif held_cards[1] == 'd':
             #draw pile
@@ -328,33 +351,47 @@ def execute(command_string,board):
             #collection pile
             pass
     elif first_item == 'draw':
-        pass
+        if not len(held_cards[0]) == 0:
+            if len(held_cards[0]) == 1:
+                return 'You must drop or place the held card first',board,False
+            else:
+                return 'You must drop or place the held cards first',board,False
+        if len(deck) == 0:
+            #no cards in deck
+            for i in range(len(drawPile)):
+                card = drawPile.pop(-1)
+                card.flip()
+                deck.append(card)
+            cycleDraw(3)
+        if len(deck) >= drawCount:
+            rng = drawCount
+        else:
+            rng = len(deck)
+        cycleDraw(rng)
     elif first_item == 'exit':
-        end = True
+        return None,board,True
     else:
-        return first_item + ' is not a recognised command',board
+        return first_item + ' is not a recognised command',board,False
     
-    return None,board
+    return None,board,False
 
 board = [] #where the current cards 'in play' and their arrangement is stored
 deck = shuffle(populated_deck()) #generate a random deck of 52 cards and store it in an array
-collection = [] #where the collected cards of each suit are stored (clubs, spades, hearts, diamonds)
+collection = [[Card(1,1,True)],[],[],[]] #where the collected cards of each suit are stored (clubs, spades, hearts, diamonds)
 drawPile = [] #where the draw cards are stored
 held_cards = [[]] #where the current held cards are stored
 board = init_board(deck)
-
-#main loop
+cycleDraw(13)
+board[2].append(Card(1,1,True))
 end = False #set to true once the user chooses to exit or wins the game
 won = False #set to true if the user has won
-
+#main loop
 while not end:
     userIn = interface(board,drawPile,held_cards)
-    error,board = execute(userIn, board)
+    error,board,end = execute(userIn, board)
     if not error == None:
         print_error(error)
         time.sleep(1)
-        
-
 if won == True:
     #they won
     pass
