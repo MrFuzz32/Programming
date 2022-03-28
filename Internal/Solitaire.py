@@ -366,16 +366,27 @@ def execute(command_string,board):
                 location = int(nb_segments[1])
                 if location > 7 or location < 1:
                     return first_item + ' has been used incorrectly',board,False
-                destCard = board[location-1][-1]
                 placeCard = held_cards[0][0]
-                if placeCard.red() == destCard.black() and placeCard.number == destCard.number-1:
-                    place(held_cards[0],nb_segments[1])
-                    placed = True
-                else:
-                    if len(held_cards[0]) == 1:
-                        return 'The held card cannot be placed there',board,False
+                if len(board[location-1]) == 0:
+                    if placeCard.number == 13:
+                        place(held_cards[0],nb_segments[1])
+                        placed = True
                     else:
-                        return 'The held cards cannot be placed there',board,False
+                        if len(held_cards[0]) == 1:
+                            return 'The held card cannot be placed there',board,False
+                        else:
+                            return 'The held cards cannot be placed there',board,False
+                else:
+                    destCard = board[location-1][-1]
+                if not placed:
+                    if placeCard.red() == destCard.black() and placeCard.number == destCard.number-1:
+                        place(held_cards[0],nb_segments[1])
+                        placed = True
+                    else:
+                        if len(held_cards[0]) == 1:
+                            return 'The held card cannot be placed there',board,False
+                        else:
+                            return 'The held cards cannot be placed there',board,False
             except Exception as e:
                 if not nb_segments[1] in ['p1','p2','p3','p4','d']:
                     return first_item + ' has been used incorrectly',board,False
@@ -394,7 +405,7 @@ def execute(command_string,board):
                         else:
                             return 'The held card cannot be placed there',board,False
                     else:
-                        if held_cards[0][0].number == collection[pileNum-1][0].number:
+                        if held_cards[0][0].number == collection[pileNum-1][0].number + 1:
                             place(held_cards[0],nb_segments[1])
                         else:
                             return 'The held card cannot be placed there',board,False
@@ -412,13 +423,14 @@ def execute(command_string,board):
                 return 'You must drop or place the held card first',board,False
             else:
                 return 'You must drop or place the held cards first',board,False
+        if len(deck) == 0 and len(drawPile) == 0:
+            return 'There are no cards to draw',board,False
         if len(deck) == 0:
             #no cards in deck
             for i in range(len(drawPile)):
                 card = drawPile.pop(-1)
                 card.flip()
                 deck.append(card)
-            cycleDraw(3)
         if len(deck) >= drawCount:
             rng = drawCount
         else:
@@ -431,19 +443,30 @@ def execute(command_string,board):
     
     return None,board,False
 
+def flip_cards(board):
+    if not len(held_cards[0]) == 0:
+        return board
+    for stack in board:
+        try:
+            if stack[-1].faceUp == False:
+                stack[-1].flip()
+        except:
+            pass
+    return board
+
 board = [] #where the current cards 'in play' and their arrangement is stored
 deck = shuffle(populated_deck()) #generate a random deck of 52 cards and store it in an array
 collection = [[],[],[],[]] #where the collected cards of each suit are stored (clubs, spades, hearts, diamonds)
 drawPile = [] #where the draw cards are stored
 held_cards = [[]] #where the current held cards are stored
 board = init_board(deck)
-cycleDraw(3)
 end = False #set to true once the user chooses to exit or wins the game
 won = False #set to true if the user has won
 #main loop
 while not end:
     userIn = interface(board,drawPile,held_cards)
     error,board,end = execute(userIn, board)
+    board = flip_cards(board)
     if not error == None:
         print_error(error)
         time.sleep(1)
