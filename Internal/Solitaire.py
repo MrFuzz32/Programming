@@ -65,7 +65,7 @@ draw_pile_preview = 10
 control_screen_width = 70
 
 #the amount of cards to draw each time the draw pile is cycled
-drawCount = 1
+drawCount = 3
 
 #stands for colour string
 def cs(text,style):
@@ -308,12 +308,25 @@ def execute(command_string,board):
         return None,board,end
     first_item = nb_segments[0]
     if first_item == 'grab':
+        if len(nb_segments) == 2:
+            modifier = 1
+        elif len(nb_segments) == 3:
+            modifier = 0
+        else:
+            return first_item + ' has been used incorrectly',board,False
+                    
         try:
-            quantity = int(nb_segments[1])
+            if modifier == 0:
+                quantity = int(nb_segments[1])
         except:
             return first_item + ' has been used incorrectly',board,False
         try:
-            location = int(nb_segments[2])
+            location = int(nb_segments[2-modifier])
+            if modifier == 1:
+                quantity = 0
+                for card in board[location-1]:
+                    if card.faceUp == True:
+                        quantity += 1
             # grab from a stack
             if location > 7 or location < 1: #check if the location is a number 1-7 (stack 1-7)
                 return first_item + ' has been used incorrectly',board,False
@@ -331,24 +344,26 @@ def execute(command_string,board):
                 return 'There are not enough face up cards in stack ' + str(location) + ' to grab ' + str(quantity),board,False
             for index in range(-quantity,0):
                 held_cards[0].append(board[location-1].pop(index))
-            held_cards.append(nb_segments[2])
+            held_cards.append(nb_segments[2-modifier])
         except:
+            if modifier == 1:
+                quantity = 1
             if not quantity == 1:
                 return first_item + ' has been used incorrectly',board,False
-            if nb_segments[2] in ['d','p1','p2','p3','p4']:
-                if nb_segments[2] == 'd':
+            if nb_segments[2-modifier] in ['d','p1','p2','p3','p4']:
+                if nb_segments[2-modifier] == 'd':
                     # grab from draw pile
                     if len(drawPile) == 0:
                         return 'The draw pile is empty',board,False
                     card = drawPile.pop(0)
                 else:
                     # grab from a collection pile
-                    pileIndex = int(nb_segments[2][1])-1
+                    pileIndex = int(nb_segments[2-modifier][1])-1
                     if len(collection[pileIndex]) == 0:
                         return 'Collection pile ' + str(pileIndex+1) + ' is empty',board,False
                     card = collection[pileIndex].pop(0)
                 held_cards[0].append(card)
-                held_cards.append(nb_segments[2])
+                held_cards.append(nb_segments[2-modifier])
             else:
                 return first_item + ' has been used incorrectly',board,False
     elif first_item == 'place':
