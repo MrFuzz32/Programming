@@ -38,6 +38,7 @@ held_title_style = Back.LIGHTYELLOW_EX + Fore.BLACK + Style.BRIGHT
 input_line_style = Back.LIGHTYELLOW_EX + Fore.BLACK
 title_style = Back.LIGHTYELLOW_EX + Fore.BLACK + Style.BRIGHT
 extra_card_status_style = Back.LIGHTGREEN_EX + Fore.BLACK
+error_style = Back.LIGHTRED_EX + Fore.BLACK
 reset_format = Style.RESET_ALL
 
 #the width (in spaces) of each card on the board, cannot be less than 5
@@ -254,9 +255,15 @@ def interface(board,drawPile,held_cards):
     
     return input()
 
+def correct(text):
+    text = text.lower()
+    text = text[0].upper() + text[1:]
+    return text
+
 #output the specified error message
 def print_error(message):
-    print(message)
+    print(cs(correct(message),error_style))
+    input(cs('Press enter to continue',error_style))
 
 #cut off any non-alphanumeric characters at the ends of the text
 def clip(text):
@@ -484,7 +491,6 @@ while not end:
     board = flip_cards(board)
     if not error == None:
         print_error(error)
-        time.sleep(1)
 if won == True:
     #they won
     pass
