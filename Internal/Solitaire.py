@@ -41,6 +41,9 @@ extra_card_status_style = Back.LIGHTGREEN_EX + Fore.BLACK
 error_style = Back.LIGHTRED_EX + Fore.BLACK
 reset_format = Style.RESET_ALL
 
+randoms = [Back.BLUE,Back.CYAN,Back.GREEN,Back.LIGHTBLUE_EX,Back.LIGHTCYAN_EX,Back.LIGHTGREEN_EX,Back.LIGHTMAGENTA_EX,Back.LIGHTRED_EX,Back.LIGHTYELLOW_EX,Back.MAGENTA,Back.RED,Back.YELLOW]
+
+
 #the width (in spaces) of each card on the board, cannot be less than 5
 card_width = 7
 if card_width < 5:
@@ -66,7 +69,7 @@ draw_pile_preview = 10
 control_screen_width = 70
 
 #the amount of cards to draw each time the draw pile is cycled
-drawCount = 3
+drawCount = 1
 
 #stands for colour string
 def cs(text,style):
@@ -149,12 +152,7 @@ def blank_row(board=True,side=True):
         output += cs(sp*side_width,side_style)
     return output
 
-#print out the UI and returns the user input
-def interface(board,drawPile,held_cards):
-    cls()
-    #print the title
-    print(header('SOLITAIRE',board_width+side_width,cs(sp,title_style),title_style))
-    
+def printPlayBoard(board,drawPile,held_cards):
     #find the longest stack on the board
     max_stack_len = 0
     for stack in board:
@@ -250,6 +248,15 @@ def interface(board,drawPile,held_cards):
     else:
         print(blank_row())
     
+
+    
+#print out the UI and returns the user input
+def interface(board,drawPile,held_cards):
+    cls()
+    #print the title
+    print(header('SOLITAIRE',board_width+side_width,cs(sp,title_style),title_style))
+    #print the board
+    printPlayBoard(board,drawPile,held_cards)
     #print the user input line
     print(cs('Input your command here:',input_line_style) + sp,end='')
     
@@ -476,6 +483,47 @@ def flip_cards(board):
             pass
     return board
 
+def celebrate():
+    cls()
+    with open('Game_win.txt') as file:
+        template = file.readlines()
+        size = (len(template[0]),len(template))
+    grid = []
+    for y in range(size[1]):
+        row = []
+        for x in range(size[0]):
+            row.append(' ')
+        grid.append(row)
+    points = []
+    for x in range(size[0]):
+        for y in range(size[1]):
+            points.append((x,y))
+    while not len(points) == 0:
+        for i in range(10):
+            index = random.randint(0,len(points)-1)
+            point = points.pop(index)
+            grid[point[1]][point[0]] = cs(grid[point[1]][point[0]],random.choice(randoms))
+            if len(points) == 0:
+                break
+        cls()
+        for row in grid:
+            for char in row:
+                print(char,end='')
+            print('')
+    for y,line in enumerate(template):
+        for x,char in enumerate(line):
+            if char == 'B':
+                grid[y][x] = cs(grid[y][x],Back.BLACK)
+    cls()
+    for row in grid:
+        for char in row:
+            print(char,end='')
+        print('')
+                
+
+def exited():
+    pass
+
 board = [] #where the current cards 'in play' and their arrangement is stored
 deck = shuffle(populated_deck()) #generate a random deck of 52 cards and store it in an array
 collection = [[],[],[],[]] #where the collected cards of each suit are stored (clubs, spades, hearts, diamonds)
@@ -491,9 +539,20 @@ while not end:
     board = flip_cards(board)
     if not error == None:
         print_error(error)
+    won = True
+    for pile in collection:
+        if not len(pile) == 13:
+            won = False
+    if userIn == 'test':
+        won = True
+    if won == True:
+        cls()
+        printPlayBoard(board,drawPile,held_cards)
+        for i in range(4):
+            print('. ',end='')
+            time.sleep(0.8)
+        end = True
 if won == True:
-    #they won
-    pass
+    celebrate()
 else:
-    #they gave up
-    pass
+    exited()
