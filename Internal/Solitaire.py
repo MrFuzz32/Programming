@@ -485,9 +485,9 @@ def flip_cards(board):
 
 def celebrate():
     cls()
-    with open('Game_win.txt') as file:
+    with open('Internal\Game_win.txt') as file:
         template = file.readlines()
-        size = (len(template[0]),len(template))
+        size = (len(template[0])+2,len(template)+2)
     grid = []
     for y in range(size[1]):
         row = []
@@ -513,12 +513,13 @@ def celebrate():
     for y,line in enumerate(template):
         for x,char in enumerate(line):
             if char == 'B':
-                grid[y][x] = cs(grid[y][x],Back.BLACK)
-    cls()
-    for row in grid:
-        for char in row:
-            print(char,end='')
-        print('')
+                grid[y+1][x+1] = cs(' ',Back.BLACK)
+        time.sleep(0.8)
+        cls()
+        for row in grid:
+            for char in row:
+                print(char,end='')
+            print('')
                 
 
 def exited():
