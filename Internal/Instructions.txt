@@ -8,7 +8,7 @@ Grab:
     Attempts to grab a number of cards from an area and puts them in your held slot
 
     Usage - Grab (q) d
-    q is how many cards to grab (eg. 3), if not entered it is my default as many as possible
+    q is how many cards to grab (eg. 3). It is in brackets because it is optional. By default as many cards as possible will be grabbed.
     d is where to grab the cards from (eg. 6 for stack 6)
     Notes:
       - q can only be 1 when grabbing from the draw pile (D) or a collection pile (P1-P4)

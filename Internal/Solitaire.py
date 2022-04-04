@@ -41,6 +41,7 @@ extra_card_status_style = Back.LIGHTGREEN_EX + Fore.BLACK
 error_style = Back.LIGHTRED_EX + Fore.BLACK
 reset_format = Style.RESET_ALL
 
+#all possible random background colours, excluding black and white
 randoms = [Back.BLUE,Back.CYAN,Back.GREEN,Back.LIGHTBLUE_EX,Back.LIGHTCYAN_EX,Back.LIGHTGREEN_EX,Back.LIGHTMAGENTA_EX,Back.LIGHTRED_EX,Back.LIGHTYELLOW_EX,Back.MAGENTA,Back.RED,Back.YELLOW]
 
 
@@ -69,13 +70,16 @@ draw_pile_preview = 10
 control_screen_width = 70
 
 #the amount of cards to draw each time the draw pile is cycled
-drawCount = 1
+drawCount = 3
 
 #stands for colour string
+#takes in a plain string and returns the string coloured with the chosen style
 def cs(text,style):
     return style+text+reset_format
 
+#one background 'segment' of the board
 board_back_seg = cs(sp,board_style)
+#one background 'segment' of the side
 side_back_seg = cs(sp,side_style)
 
 # taken from https://stackoverflow.com/questions/517970/how-to-clear-the-interpreter-console
@@ -109,9 +113,9 @@ def shuffle(deck):
         new_deck.append(card)
     return new_deck
 
+#deal out seven stacks of cards in increasing sizes (as is required for the beginning of solitaire) into the deck passed in
 def init_board(deck):
     board = []
-    #deal out seven stacks of cards in increasing sizes (as is required for the beginning of solitaire)
     for stack_len in range(1,8):
         stack = []
         for i in range(stack_len):
@@ -122,6 +126,7 @@ def init_board(deck):
         board.append(stack)
     return board
 
+#take in a card object and return the tidy string out, coloured appropriately by default
 def card_string(card, colour = True):
     info,faceUp = card.visible_info()
     if faceUp:
@@ -132,6 +137,7 @@ def card_string(card, colour = True):
         middle = 'x'*(card_width-2)
     output = '[' + middle + ']'
     
+    #if colour is true, colour the card string
     if colour:
         if faceUp:
             if card.red():
@@ -144,6 +150,7 @@ def card_string(card, colour = True):
     
     return output
 
+#return a row of blank spaces of the length of a blank row of the board and/or side, coloured appropriately
 def blank_row(board=True,side=True):
     output = ''
     if board:
@@ -152,6 +159,7 @@ def blank_row(board=True,side=True):
         output += cs(sp*side_width,side_style)
     return output
 
+#print out the current state of the board, collection piles, draw pile, and held cards
 def printPlayBoard(board,drawPile,held_cards):
     #find the longest stack on the board
     max_stack_len = 0
@@ -211,11 +219,11 @@ def printPlayBoard(board,drawPile,held_cards):
     except:
         middle = board_back_seg*card_width
     line = board_back_seg*(stack_spacing) + cs(start+middle,facedown_card_style) + board_back_seg*(delta+1)
-    for i in range(2,-1,-1):
+    for i in range(2,-1,-1): #loop through the top three cards of the deck
         try:
             index = i
-            if len(held_cards) == 2 and held_cards[1] == 'd':
-                if i == 0:
+            if len(held_cards) == 2 and held_cards[1] == 'd': #if a card from the draw pile is in the held cards
+                if i == 0: #don't print the last card
                     raise Exception()
                 else:
                     index = i-1
@@ -232,6 +240,7 @@ def printPlayBoard(board,drawPile,held_cards):
         except:
             line += board_back_seg*(card_width+draw_pile_spacing)
     print(line,end='')
+    #print out the line
     line_length = stack_spacing + len(start) + card_width +1 + 3*card_width + 2*draw_pile_spacing + delta
     print(board_back_seg*(board_width-line_length),end='')
     
@@ -262,6 +271,7 @@ def interface(board,drawPile,held_cards):
     
     return input()
 
+#make all letters lowercase except the first
 def correct(text):
     text = text.lower()
     text = text[0].upper() + text[1:]
@@ -315,13 +325,15 @@ def execute(command_string,board):
     command_string_lower = command_string.lower()
     segments = command_string_lower.split(' ')
     nb_segments = [] #stands for non_blank_segments
+    #check each segment to see if it's blank, if it isn't: append it to nb_segments
     for count,segment in enumerate(segments):
         if not len(segment) == 0:
             nb_segments.append(segments[count])
+    #if there was no substance to the user's input, return None
     if len(nb_segments) == 0:
-        return None,board,end
+        return None,board,False
     first_item = nb_segments[0]
-    if first_item == 'grab':
+    if first_item == 'grab': #grab a card or cards
         if len(nb_segments) == 2:
             modifier = 1
         elif len(nb_segments) == 3:
@@ -341,6 +353,10 @@ def execute(command_string,board):
                 for card in board[location-1]:
                     if card.faceUp == True:
                         quantity += 1
+            if quantity < 0:
+                return first_item + ' has been used incorrectly',board,False
+            if quantity < 1:
+                return 'You cannot grab no cards',board,False
             # grab from a stack
             if location > 7 or location < 1: #check if the location is a number 1-7 (stack 1-7)
                 return first_item + ' has been used incorrectly',board,False
@@ -380,18 +396,18 @@ def execute(command_string,board):
                 held_cards.append(nb_segments[2-modifier])
             else:
                 return first_item + ' has been used incorrectly',board,False
-    elif first_item == 'place':
+    elif first_item == 'place': #place a card or cards
         placed = False
         if len(held_cards[0]) == 0:
             return 'there are no held cards to place',board,False
         if len(nb_segments) < 2:
             return first_item + ' has been used incorrectly',board,False
-        if nb_segments[1] == held_cards[1]:
+        if nb_segments[1] == held_cards[1]: #if the requested location is the same as where the cards were grabbed from, place them
             place(held_cards[0],nb_segments[1])
             placed = True
         if not placed:
             try:
-                #stack
+                #place on a stack
                 location = int(nb_segments[1])
                 if location > 7 or location < 1:
                     return first_item + ' has been used incorrectly',board,False
@@ -419,7 +435,7 @@ def execute(command_string,board):
             except Exception as e:
                 if not nb_segments[1] in ['p1','p2','p3','p4','d']:
                     return first_item + ' has been used incorrectly',board,False
-                if nb_segments[1] == 'd':
+                if nb_segments[1] == 'd': #draw pile
                     return 'Only a card taken from the draw pile can be placed back there',board,False
                 else:
                     #collection pile
@@ -441,12 +457,12 @@ def execute(command_string,board):
                     placed = True
         if placed:
             held_cards.pop(1)
-    elif first_item == 'drop':
+    elif first_item == 'drop': #drop cards back to where they came from
         if len(held_cards[0]) == 0:
             return 'there are no cards to drop',board,False
         place(held_cards[0],held_cards[1])
         held_cards.pop(1)
-    elif first_item == 'draw':
+    elif first_item == 'draw': #cycle the draw pile
         if not len(held_cards[0]) == 0:
             if len(held_cards[0]) == 1:
                 return 'You must drop or place the held card first',board,False
@@ -465,13 +481,14 @@ def execute(command_string,board):
         else:
             rng = len(deck)
         cycleDraw(rng)
-    elif first_item == 'exit':
+    elif first_item == 'exit': #exit the program
         return None,board,True
     else:
         return first_item + ' is not a recognised command',board,False
     
-    return None,board,False
+    return None,board,False #the operation was executed successfully
 
+#flip any cards at the top of a stack that are face down, if no cards are currently held
 def flip_cards(board):
     if not len(held_cards[0]) == 0:
         return board
@@ -483,26 +500,31 @@ def flip_cards(board):
             pass
     return board
 
+#celebration animation
 def celebrate():
     cls()
+    #read in the celebration template
     with open('Internal\Game_win.txt') as file:
         template = file.readlines()
-        size = (len(template[0])+2,len(template)+2)
+        size = (len(template[0])+1,len(template)+2)
+    #fill the grid with blank spaces
     grid = []
     for y in range(size[1]):
         row = []
         for x in range(size[0]):
-            row.append(' ')
+            row.append(cs(' ',Back.WHITE))
         grid.append(row)
+    #fill the points list with every possible point on the grid
     points = []
     for x in range(size[0]):
         for y in range(size[1]):
             points.append((x,y))
+    #fill the grid with random colours and print it out once every 10 cycles
     while not len(points) == 0:
         for i in range(10):
             index = random.randint(0,len(points)-1)
             point = points.pop(index)
-            grid[point[1]][point[0]] = cs(grid[point[1]][point[0]],random.choice(randoms))
+            grid[point[1]][point[0]] = cs(' ',random.choice(randoms))
             if len(points) == 0:
                 break
         cls()
@@ -510,22 +532,20 @@ def celebrate():
             for char in row:
                 print(char,end='')
             print('')
+    #for every part of the template with a B, colour the grid black
     for y,line in enumerate(template):
         for x,char in enumerate(line):
             if char == 'B':
                 grid[y+1][x+1] = cs(' ',Back.BLACK)
-        time.sleep(0.8)
+        time.sleep(0.3)
         cls()
         for row in grid:
             for char in row:
                 print(char,end='')
             print('')
-                
 
-def exited():
-    pass
 
-board = [] #where the current cards 'in play' and their arrangement is stored
+board = [] #where the current cards 'in play' and their arrangement are stored
 deck = shuffle(populated_deck()) #generate a random deck of 52 cards and store it in an array
 collection = [[],[],[],[]] #where the collected cards of each suit are stored (clubs, spades, hearts, diamonds)
 drawPile = [] #where the draw cards are stored
@@ -535,25 +555,22 @@ end = False #set to true once the user chooses to exit or wins the game
 won = False #set to true if the user has won
 #main loop
 while not end:
-    userIn = interface(board,drawPile,held_cards)
-    error,board,end = execute(userIn, board)
-    board = flip_cards(board)
-    if not error == None:
+    userIn = interface(board,drawPile,held_cards) #print out the UI and collect the user input
+    error,board,end = execute(userIn, board) #attempt to execute the user's input
+    board = flip_cards(board) #flip cards if applicable
+    if not error == None: #if there was an error, print it
         print_error(error)
+    #check if the user has satisfied the win condition
     won = True
     for pile in collection:
         if not len(pile) == 13:
             won = False
-    if userIn == 'test':
-        won = True
+    #if the user won, print the board a final time
     if won == True:
         cls()
         printPlayBoard(board,drawPile,held_cards)
-        for i in range(4):
-            print('. ',end='')
-            time.sleep(0.8)
+        time.sleep(1.3)
         end = True
+#celebrate the user winning
 if won == True:
     celebrate()
-else:
-    exited()
