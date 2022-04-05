@@ -571,6 +571,7 @@ while not end:
         printPlayBoard(board,drawPile,held_cards)
         time.sleep(1.3)
         end = True
+    
 #celebrate the user winning
 if won == True:
     celebrate()
