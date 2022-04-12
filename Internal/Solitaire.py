@@ -565,6 +565,7 @@ while not end:
     for pile in collection:
         if not len(pile) == 13:
             won = False
+    won = True
     #if the user won, print the board a final time
     if won == True:
         cls()
